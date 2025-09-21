@@ -84,6 +84,10 @@ Route::middleware(["auth:sanctum"])->group(function () {
         Route::post("/admin/events/{event}/status", [EventController::class, "approveReject"]);
 
     });
+
+    // User Profile Management
+Route::put("/user/profile", [AuthController::class, "updateProfile"]);
+Route::put("/user/password", [AuthController::class, "updatePassword"]);
 });
 
 // Test route (can be removed later)
