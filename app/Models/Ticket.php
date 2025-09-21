@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Enums\TicketStatus;
 
 class Ticket extends Model
 {
@@ -20,7 +21,7 @@ class Ticket extends Model
     protected function casts(): array
     {
         return [
-            'status' => TicketStatus::class, //  Enum TicketStatus 
+            'status' => TicketStatus::class, //  Enum TicketStatus
         ];
     }
 
@@ -39,4 +40,11 @@ class Ticket extends Model
     {
         return $this->belongsTo(User::class, 'attendee_id');
     }
+
+
+    public function order():BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
 }
