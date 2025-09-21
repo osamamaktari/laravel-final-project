@@ -55,4 +55,25 @@ class Event extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+//     public function tickets():hasMany
+// {
+//     return $this->hasMany(Ticket::class);
+// }
+// public function tickets()
+// {
+//     return $this->hasManyThrough(Ticket::class, TicketType::class, 'event_id', 'ticket_type_id');
+// }
+public function tickets()
+{
+    return $this->hasManyThrough(
+        Ticket::class,      
+        TicketType::class,  // موديل الوسيط
+        'event_id',         // عمود event_id في ticket_types
+        'ticket_type_id',   // عمود ticket_type_id في tickets
+        'id',               // المفتاح الأساسي في events
+        'id'                // المفتاح الأساسي في ticket_types
+    );
+}
+
 }
