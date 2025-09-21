@@ -54,7 +54,7 @@ Route::middleware(["auth:sanctum"])->group(function () {
     // Attendee Specific Routes
     Route::middleware(["role:attendee"])->group(function () {
         Route::post("/events/{event}/orders", [OrderController::class, "store"]);
-        Route::post("/orders/{order}/pay", [OrderController::class, "pay"]);
+        // Route::post("/orders/{order}/pay", [OrderController::class, "pay"]);
         Route::get("/user/orders", [OrderController::class, "userOrders"]);
         Route::get("/orders/{order}", [OrderController::class, "show"]);
         Route::get("/user/tickets", [TicketController::class, "userTickets"]);
