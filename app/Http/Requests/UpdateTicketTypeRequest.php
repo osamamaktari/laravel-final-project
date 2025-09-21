@@ -12,7 +12,7 @@ class UpdateTicketTypeRequest extends FormRequest
      */
     public function authorize(): bool
     {
-   
+
         return true;
     }
 
@@ -25,7 +25,8 @@ class UpdateTicketTypeRequest extends FormRequest
     {
         return [
             'name' => 'sometimes|required|string|max:255',
-            'price' => 'sometimes|required|numeric|min:0',
+    'price' => 'required|numeric|min:1',
+
             'quantity' => 'sometimes|required|integer|min:1',
         ];
     }

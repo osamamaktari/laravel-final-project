@@ -25,7 +25,8 @@ class StoreTicketTypeRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
+        'price' => 'required|numeric|min:1',
+
             'quantity' => 'required|integer|min:1',
         ];
     }

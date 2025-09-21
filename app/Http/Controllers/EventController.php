@@ -92,13 +92,14 @@ class EventController extends Controller
 
         $events = auth()->user()->events()->with("ticketTypes")->orderBy("start_date", "asc")->get();
 
-        return response()->json($events);
+       return response()->json(['data' => $events]);
+
     }
 
 
     public function approveReject(Request $request, Event $event)
     {
-        $this->authorize("approveReject", $event); 
+        $this->authorize("approveReject", $event);
 
         $request->validate([
             "status" => ["required", "in:" . EventStatus::APPROVED->value . "," . EventStatus::REJECTED->value],

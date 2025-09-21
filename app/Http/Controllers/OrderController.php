@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Enums\OrderStatus;
 use App\Models\Event;
 use App\Models\Order;
@@ -18,10 +19,11 @@ class OrderController extends Controller
     {
         $this->authorize("isAttendee");
 
+
         $request->validate([
-            "ticket_types" => "required|array",
-            "ticket_types.*.ticket_type_id" => "required|exists:ticket_types,id",
-            "ticket_types.*.quantity" => "required|integer|min:1",
+            "items" => "required|array",
+            "items.*.ticket_type_id" => "required|exists:ticket_types,id",
+            "items.*.quantity" => "required|integer|min:1",
         ]);
 
         return DB::transaction(function () use ($request, $event) {
@@ -29,18 +31,18 @@ class OrderController extends Controller
             $orderItemsData = [];
             $ticketsToCreate = [];
 
-            foreach ($request->ticket_types as $item) {
+            foreach ($request->items as $item) {
                 $ticketType = TicketType::findOrFail($item["ticket_type_id"]);
 
                 if ($ticketType->event_id !== $event->id) {
                     throw ValidationException::withMessages([
-                        "ticket_types" => ["Ticket type does not belong to this event."],
+                        "items" => ["Ticket type does not belong to this event."],
                     ]);
                 }
 
                 if ($ticketType->quantity - $ticketType->sold < $item["quantity"]) {
                     throw ValidationException::withMessages([
-                        "ticket_types" => ["Not enough tickets available for " . $ticketType->name],
+                        "items" => ["Not enough tickets available for " . $ticketType->name],
                     ]);
                 }
 
@@ -51,9 +53,7 @@ class OrderController extends Controller
                     "price" => $ticketType->price,
                 ];
 
-
                 $ticketType->increment("sold", $item["quantity"]);
-
 
                 for ($i = 0; $i < $item["quantity"]; $i++) {
                     $ticketsToCreate[] = [
@@ -73,7 +73,6 @@ class OrderController extends Controller
 
             $order->orderItems()->createMany($orderItemsData);
 
-
             foreach ($ticketsToCreate as &$ticketData) {
                 $ticket = $order->tickets()->create($ticketData);
                 $qrCodeContent = json_encode([
@@ -81,11 +80,11 @@ class OrderController extends Controller
                     "order_id" => $order->id,
                     "user_id" => auth()->id(),
                 ]);
-                $ticket->qr_code = base64_encode(QrCode::format("png")->size(200)->generate($qrCodeContent));
-                $ticket->save();
+                // $ticket->qr_code = QrCode::size(200)->generate($qrCodeContent);
+                // $ticket->save();
+                $ticket->qr_code = $qrCodeContent;
+$ticket->save();
             }
-
-
 
             return response()->json($order->load("orderItems.ticketType.event"), 201);
         });
@@ -106,22 +105,13 @@ class OrderController extends Controller
             "payment_method_id" => "required|string",
         ]);
 
-        // هنا يتم دمج بوابة الدفع (Stripe, PayPal, إلخ.)
-        // هذا مجرد محاكاة بسيطة
         try {
-            // Simulate payment processing
-            // $paymentIntent = Stripe::paymentIntents()->confirm($request->payment_method_id, [...]);
-            // if ($paymentIntent->status === 'succeeded') {
             $order->update([
                 "status" => OrderStatus::PAID,
-                "payment_intent_id" => $request->payment_method_id, // أو الـ ID الحقيقي من بوابة الدفع
+                "payment_intent_id" => $request->payment_method_id,
             ]);
 
-            // إرسال إشعار للمستخدم (سنقوم بتطبيقه لاحقاً)
-            // auth()->user()->notify(new OrderPaidNotification($order));
-
             return response()->json(["message" => "Payment successful", "order" => $order]);
-            // }
         } catch (\Exception $e) {
             throw ValidationException::withMessages([
                 "payment" => ["Payment failed: " . $e->getMessage()],
@@ -132,7 +122,10 @@ class OrderController extends Controller
     public function userOrders()
     {
         $this->authorize("isAttendee");
-        $orders = auth()->user()->orders()->with("orderItems.ticketType.event")->orderBy("created_at", "desc")->get();
+        $orders = auth()->user()->orders()
+            ->with("orderItems.ticketType.event")
+            ->orderBy("created_at", "desc")
+            ->get();
 
         return response()->json($orders);
     }
