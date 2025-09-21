@@ -29,21 +29,21 @@ class EventController extends Controller
 
     public function show(Event $event)
     {
-
         $event->load("organizer", "ticketTypes");
         return response()->json($event);
     }
 
     public function store(StoreEventRequest $request)
     {
-
         $this->authorize("create", Event::class);
 
         $data = $request->validated();
 
         if ($request->hasFile("banner")) {
-            $data["banner_url"] = Storage::putFile("public/banners", $request->file("banner"));
-            $data["banner_url"] = Storage::url($data["banner_url"]);
+            $file = $request->file("banner");
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('public/banners', $fileName);
+            $data['banner_url'] = Storage::url('banners/' . $fileName);
         }
 
         $event = auth()->user()->events()->create($data);
@@ -53,18 +53,21 @@ class EventController extends Controller
 
     public function update(UpdateEventRequest $request, Event $event)
     {
-
         $this->authorize("update", $event);
 
         $data = $request->validated();
 
         if ($request->hasFile("banner")) {
-
+       
             if ($event->banner_url) {
-                Storage::delete(str_replace("/storage", "public", $event->banner_url));
+                $oldFile = str_replace('/storage/', 'public/', $event->banner_url);
+                Storage::delete($oldFile);
             }
-            $data["banner_url"] = Storage::putFile("public/banners", $request->file("banner"));
-            $data["banner_url"] = Storage::url($data["banner_url"]);
+
+            $file = $request->file("banner");
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('public/banners', $fileName);
+            $data['banner_url'] = Storage::url('banners/' . $fileName);
         }
 
         $event->update($data);
@@ -74,17 +77,17 @@ class EventController extends Controller
 
     public function destroy(Event $event)
     {
-
         $this->authorize("delete", $event);
 
         if ($event->banner_url) {
-            Storage::delete(str_replace("/storage", "public", $event->banner_url));
+            $oldFile = str_replace('/storage/', 'public/', $event->banner_url);
+            Storage::delete($oldFile);
         }
+
         $event->delete();
 
         return response()->json(null, 204);
     }
-
 
     public function organizerEvents()
     {
@@ -92,10 +95,8 @@ class EventController extends Controller
 
         $events = auth()->user()->events()->with("ticketTypes")->orderBy("start_date", "asc")->get();
 
-       return response()->json(['data' => $events]);
-
+        return response()->json(['data' => $events]);
     }
-
 
     public function approveReject(Request $request, Event $event)
     {

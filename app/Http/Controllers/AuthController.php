@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
@@ -71,4 +72,50 @@ class AuthController extends Controller
     {
         return response()->json($request->user());
     }
+
+
+
+public function updateProfile(Request $request)
+{
+    $user = $request->user();
+
+    $validated = $request->validate([
+        'name'  => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+        'phone' => ['nullable', 'string', 'max:20'],
+    ]);
+
+    $user->update($validated);
+
+    return response()->json([
+        'message' => 'Profile updated successfully',
+        'user'    => $user,
+    ]);
+}
+
+public function updatePassword(Request $request)
+{
+    $user = $request->user();
+
+    $validated = $request->validate([
+        'current_password' => ['required'],
+        'new_password'     => ['required', 'string', 'min:8', 'confirmed'],
+    ]);
+
+    // Check old password
+    if (!Hash::check($validated['current_password'], $user->password)) {
+        return response()->json(['message' => 'Current password is incorrect'], 422);
+    }
+
+    $user->update([
+        'password' => Hash::make($validated['new_password']),
+    ]);
+
+    return response()->json(['message' => 'Password updated successfully']);
+}
+
+
+
+
+
 }

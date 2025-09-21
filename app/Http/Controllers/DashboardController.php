@@ -41,7 +41,7 @@ class DashboardController extends Controller
             ->get();
 
         // Top Performing Events
-        $topEvents = Event::withCount(["orders as total_orders"]) 
+        $topEvents = Event::withCount(["orders as total_orders"])
             ->orderByDesc("total_orders")
             ->limit(5)
             ->get(["id", "title"]);
@@ -52,15 +52,46 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        return response()->json([
-            "totalRevenue" => $totalRevenue,
-            "totalTicketsSold" => $totalTicketsSold,
-            "totalEvents" => $totalEvents,
-            "totalAttendees" => $totalAttendees,
-            "ticketsSoldPerEvent" => $ticketsSoldPerEvent,
-            "revenueOverTime" => $revenueOverTime,
-            "topEvents" => $topEvents,
-            "recentOrders" => $recentOrders,
-        ]);
+       return response()->json([
+    "totalRevenue" => $totalRevenue,
+    "totalTicketsSold" => $totalTicketsSold,
+    "totalEvents" => $totalEvents,
+    "totalAttendees" => $totalAttendees,
+
+    // Bar Chart
+    "ticketsSoldPerEvent" => $ticketsSoldPerEvent->map(function ($event) {
+        return [
+            "title" => $event->title,
+            "ticketsSold" => $event->total_tickets_sold,
+        ];
+    }),
+
+    // Line Chart
+    "revenueByMonth" => $revenueOverTime->map(function ($row) {
+        return [
+            "month" => $row->date,
+            "revenue" => $row->daily_revenue,
+        ];
+    }),
+
+    // Top Events
+    "topEvents" => $topEvents->map(function ($event) {
+        return [
+            "id" => $event->id,
+            "title" => $event->title,
+            "revenue" => $event->total_orders,
+        ];
+    }),
+
+    // Recent Orders
+    "recentOrders" => $recentOrders->map(function ($order) {
+        return [
+            "id" => $order->id,
+            "attendeeName" => $order->user->name ?? 'N/A',
+            "eventName" => $order->event->title ?? 'N/A',
+            "totalAmount" => (float) $order->total_amount,
+        ];
+    }),
+]);
     }
 }
