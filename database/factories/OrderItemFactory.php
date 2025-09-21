@@ -14,10 +14,15 @@ class OrderItemFactory extends Factory
      *
      * @return array<string, mixed>
      */
-    public function definition(): array
+    protected $model = \App\Models\OrderItem::class;
+
+    public function definition():array
     {
         return [
-            //
+            'order_id' => \App\Models\Order::factory(),
+            'ticket_type_id' => \App\Models\TicketType::factory(),
+            'quantity' => $this->faker->numberBetween(1, 5),
+            'price' => $this->faker->numberBetween(10, 200),
         ];
-    }
+}
 }
