@@ -5,20 +5,18 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Enums\OrderStatus;
 use App\Models\Event;
-use App\Models\Order;
-use App\Models\Ticket;
 use App\Models\TicketType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use App\Notifications\OrderCreatedNotification;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
     public function store(Request $request, Event $event)
     {
         $this->authorize("isAttendee");
-
 
         $request->validate([
             "items" => "required|array",
@@ -75,58 +73,21 @@ class OrderController extends Controller
 
             foreach ($ticketsToCreate as &$ticketData) {
                 $ticket = $order->tickets()->create($ticketData);
-                $qrCodeContent = json_encode([
+                $ticket->qr_code = json_encode([
                     "ticket_id" => $ticket->id,
                     "order_id" => $order->id,
                     "user_id" => auth()->id(),
                 ]);
-                // $ticket->qr_code = QrCode::size(200)->generate($qrCodeContent);
-                // $ticket->save();
-                $ticket->qr_code = $qrCodeContent;
-$ticket->save();
+                $ticket->save();
             }
+
+            Log::info("📩 [Controller] قبل إرسال OrderCreatedNotification للطلب #{$order->id}");
+
+            auth()->user()->notify(new OrderCreatedNotification($order));
+
+            Log::info("📩 [Controller] بعد إرسال OrderCreatedNotification للطلب #{$order->id}");
 
             return response()->json($order->load("orderItems.ticketType.event"), 201);
         });
-    }
-
-    public function show(Order $order)
-    {
-        $this->authorize("view", $order);
-
-        return response()->json($order->load("orderItems.ticketType.event"));
-    }
-
-    public function pay(Request $request, Order $order)
-    {
-        $this->authorize("pay", $order);
-
-        $request->validate([
-            "payment_method_id" => "required|string",
-        ]);
-
-        try {
-            $order->update([
-                "status" => OrderStatus::PAID,
-                "payment_intent_id" => $request->payment_method_id,
-            ]);
-
-            return response()->json(["message" => "Payment successful", "order" => $order]);
-        } catch (\Exception $e) {
-            throw ValidationException::withMessages([
-                "payment" => ["Payment failed: " . $e->getMessage()],
-            ]);
-        }
-    }
-
-    public function userOrders()
-    {
-        $this->authorize("isAttendee");
-        $orders = auth()->user()->orders()
-            ->with("orderItems.ticketType.event")
-            ->orderBy("created_at", "desc")
-            ->get();
-
-        return response()->json($orders);
     }
 }

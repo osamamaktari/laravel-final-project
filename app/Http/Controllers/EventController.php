@@ -8,6 +8,10 @@ use App\Http\Requests\UpdateEventRequest;
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Ticket;
+
+
+
 
 class EventController extends Controller
 {
@@ -21,11 +25,30 @@ class EventController extends Controller
             ->when($request->has("status"), function ($query) use ($request) {
                 $query->where("status", $request->status);
             })
-            ->orderBy("start_date", "asc")
-            ->paginate(10);
+            ->orderBy("start_date", "desc")
+            ->paginate(40);
 
         return response()->json($events);
     }
+//     public function index(Request $request)
+// {
+//     $query = auth()->user()->events()->with("organizer", "ticketTypes");
+
+//     if ($request->has("search") && !empty($request->search)) {
+//         $query->where(function ($q) use ($request) {
+//             $q->where("title", "like", "%" . $request->search . "%")
+//               ->orWhere("description", "like", "%" . $request->search . "%");
+//         });
+//     }
+
+//     if ($request->has("status") && !empty($request->status)) {
+//         $query->where("status", $request->status);
+//     }
+
+//     $events = $query->orderBy("created_at", "desc")->paginate(10);
+
+//     return response()->json($events);
+// }
 
     public function show(Event $event)
     {
@@ -33,23 +56,40 @@ class EventController extends Controller
         return response()->json($event);
     }
 
+    // public function store(StoreEventRequest $request)
+    // {
+    //     $this->authorize("create", Event::class);
+
+    //     $data = $request->validated();
+
+    //     if ($request->hasFile("banner")) {
+    //         $file = $request->file("banner");
+    //         $fileName = time() . '_' . $file->getClientOriginalName();
+    //         $file->storeAs('public/banners', $fileName);
+    //         $data['banner_url'] = Storage::url('banners/' . $fileName);
+    //     }
+
+    //     $event = auth()->user()->events()->create($data);
+
+    //     return response()->json($event, 201);
+    // }
     public function store(StoreEventRequest $request)
-    {
-        $this->authorize("create", Event::class);
+{
+    $this->authorize("create", Event::class);
 
-        $data = $request->validated();
+    $data = $request->validated();
 
-        if ($request->hasFile("banner")) {
-            $file = $request->file("banner");
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $file->storeAs('public/banners', $fileName);
-            $data['banner_url'] = Storage::url('banners/' . $fileName);
-        }
-
-        $event = auth()->user()->events()->create($data);
-
-        return response()->json($event, 201);
+    if ($request->hasFile("banner")) {
+        $file = $request->file("banner");
+        $fileName = time() . '_' . $file->getClientOriginalName();
+        $path = $file->storeAs('banners', $fileName, 'public');
+        $data['banner_url'] = $path;
     }
+
+    $event = auth()->user()->events()->create($data);
+
+    return response()->json($event, 201);
+}
 
     public function update(UpdateEventRequest $request, Event $event)
     {
@@ -58,7 +98,7 @@ class EventController extends Controller
         $data = $request->validated();
 
         if ($request->hasFile("banner")) {
-       
+
             if ($event->banner_url) {
                 $oldFile = str_replace('/storage/', 'public/', $event->banner_url);
                 Storage::delete($oldFile);
@@ -110,4 +150,22 @@ class EventController extends Controller
 
         return response()->json($event);
     }
+
+
+
+
+
+public function tickets($eventId)
+{
+    $tickets = Ticket::with(['attendee', 'ticketType'])
+        ->whereHas('ticketType', function($q) use ($eventId) {
+            $q->where('event_id', $eventId);
+        })
+        ->get();
+
+    return response()->json($tickets);
+}
+
+
+
 }
