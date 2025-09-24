@@ -266,3 +266,5 @@ Developed by Osama Altal
 
 📌 Backend: Laravel 10, Sanctum, DomPDF, QRCode
 📌 Database: MySQL markdown readme.md
+📌 Powerpoint presentaionlink:
+https://www.slidespilot.com/s/p/lBMrWGzx0v
