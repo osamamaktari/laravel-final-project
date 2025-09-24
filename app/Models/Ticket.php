@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Enums\TicketStatus;
 
+
 class Ticket extends Model
 {
     use HasFactory;
@@ -18,12 +19,10 @@ class Ticket extends Model
         'status',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'status' => TicketStatus::class, //  Enum TicketStatus
-        ];
-    }
+   protected $casts = [
+    'status' => TicketStatus::class,
+];
+
 
     /**
      * Get the ticket type that the ticket belongs to.
@@ -46,5 +45,9 @@ class Ticket extends Model
     {
         return $this->belongsTo(Order::class);
     }
+
+
+
+
 
 }
