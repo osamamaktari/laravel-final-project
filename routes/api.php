@@ -28,6 +28,8 @@ Route::post("/register", [AuthController::class, "register"]);
 Route::post("/login", [AuthController::class, "login"]);
 Route::get("/events", [EventController::class, "index"]); //
 Route::get("/events/{event}", [EventController::class, "show"]);
+    Route::get('/events/{id}/tickets', [EventController::class, 'tickets']);
+
 
 Route::get('/qr', function () {
     return QrCode::size(200)->generate('Hello World');
@@ -64,10 +66,12 @@ Route::middleware(["auth:sanctum"])->group(function () {
 
     // Organizer Specific Routes (or Admin)
     Route::middleware(["role:organizer,admin"])->group(function () {
+        Route::get("/organizer/events", [EventController::class, "index"]);
         Route::get("/organizer/events", [EventController::class, "organizerEvents"]);
         Route::post("/organizer/events", [EventController::class, "store"]);
         Route::post("/organizer/events/{event}", [EventController::class, "update"]);
         Route::delete("/organizer/events/{event}", [EventController::class, "destroy"]);
+
 
         // Ticket Types Management
         Route::post("/organizer/events/{event}/ticket-types", [TicketTypeController::class, "store"]);
@@ -81,6 +85,7 @@ Route::middleware(["auth:sanctum"])->group(function () {
     // Admin Specific Routes
     Route::middleware(["role:admin"])->group(function () {
         Route::get("/admin/dashboard", [DashboardController::class, "adminDashboard"]);
+        Route::get("/admin/events", [EventController::class, "index"]);
         Route::post("/admin/events/{event}/status", [EventController::class, "approveReject"]);
 
     });
