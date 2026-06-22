@@ -20,6 +20,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+
+
+$admin = User::create([
+        'name' => 'System Admin',
+        'email' => 'admin@example.com',
+        'password' => \Illuminate\Support\Facades\Hash::make('1234'),
+        'role' => 'admin',
+        'phone' => '0777777777',
+    ]);
+
         //  Users
         $users = User::factory(10)->create();
         $organizers = $users->where('role', 'organizer')->values();
