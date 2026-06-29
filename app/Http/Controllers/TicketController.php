@@ -65,7 +65,13 @@ public function download(Ticket $ticket)
     ";
 
     $pdf = Pdf::loadHTML($html);
-    return $pdf->download("ticket-{$ticket->id}.pdf");
+  // استبدل السطر القديم بهذا السطر تماماً:
+return $pdf->download("ticket-{$ticket->id}.pdf", [
+    'Access-Control-Allow-Origin'      => isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '*',
+    'Access-Control-Allow-Methods'     => 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers'     => 'Authorization, Content-Type, X-Requested-With',
+    'Access-Control-Allow-Credentials' => 'true'
+]);
 }
 
 

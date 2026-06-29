@@ -155,6 +155,16 @@ class EventController extends Controller
 
 
 
+// public function tickets($eventId)
+// {
+//     $tickets = Ticket::with(['attendee', 'ticketType'])
+//         ->whereHas('ticketType', function($q) use ($eventId) {
+//             $q->where('event_id', $eventId);
+//         })
+//         ->get();
+
+//     return response()->json($tickets);
+// }
 public function tickets($eventId)
 {
     $tickets = Ticket::with(['attendee', 'ticketType'])
@@ -163,7 +173,17 @@ public function tickets($eventId)
         })
         ->get();
 
-    return response()->json($tickets);
+    // 🔥 تحويل البيانات لضمان وصول المسميات للـ Vue بشكل صحيح 100%
+    $formattedTickets = $tickets->map(function ($ticket) {
+        return [
+            'id' => $ticket->id,
+            'status' => $ticket->status,
+            'attendee' => $ticket->attendee, // يمثل كائن المستخدم (الاسم والإيميل)
+            'ticket_type' => $ticket->ticketType, // نضمن تسميتها بـ ticket_type للـ Vue
+        ];
+    });
+
+    return response()->json($formattedTickets);
 }
 
 
